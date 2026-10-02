@@ -1,0 +1,211 @@
+{
+  "name": "00000000-0000-0000-0000-000000000001",
+  "id": "/providers/Microsoft.Flow/flows/00000000-0000-0000-0000-000000000001",
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "ExpLog - Sync to Excel (Created or Modified)",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created_or_modified": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 3
+          },
+          "evaluatedRecurrence": {
+            "frequency": "Minute",
+            "interval": 3
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://contoso.sharepoint.com/sites/ExampleSite",
+              "table": "00000000-0000-0000-0000-000000000005"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetOnUpdatedItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Get_a_row": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "source": "sites/contoso.sharepoint.com,00000000-0000-0000-0000-000000000008,00000000-0000-0000-0000-000000000009",
+              "drive": "YOUR_DRIVE_ID",
+              "file": "YOUR_FILE_ID",
+              "table": "{00000000-0000-0000-0000-000000000007}",
+              "idColumn": "SharePointID",
+              "id": "@triggerOutputs()?['body/ID']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+              "connectionName": "shared_excelonlinebusiness",
+              "operationId": "GetItem"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Condition": {
+          "actions": {
+            "Update_a_row": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "source": "sites/contoso.sharepoint.com,00000000-0000-0000-0000-000000000008,00000000-0000-0000-0000-000000000009",
+                  "drive": "YOUR_DRIVE_ID",
+                  "file": "YOUR_FILE_ID",
+                  "table": "{00000000-0000-0000-0000-000000000007}",
+                  "idColumn": "SharePointID",
+                  "id": "@triggerOutputs()?['body/ID']",
+                  "item/Experiment ID": "@concat(slice(triggerBody()?['WorkPackage']?['Value'],0,3),'-',triggerBody()?['ExperimentID'])",
+                  "item/Date": "@triggerBody()?['Date']",
+                  "item/Researcher": "@triggerBody()?['Researcher']",
+                  "item/Reviewed By": "@triggerBody()?['Reviewedby']",
+                  "item/Review Date": "@triggerBody()?['ReviewDate']",
+                  "item/Workstream": "@triggerBody()?['WorkPackage/Value']",
+                  "item/Design Input Ref": "@triggerBody()?['DesignInputReference']",
+                  "item/Experiment Title": "@triggerBody()?['ExperimentTitle']",
+                  "item/Purpose & Hypothesis": "@triggerBody()?['Purpose_x002f_Hypothesis']",
+                  "item/Equipment Used": "@triggerBody()?['EquipmentUsed']",
+                  "item/Cal Status": "@triggerBody()?['CalibrationStatus/Value']",
+                  "item/Materials & Reagents": "@triggerBody()?['MaterialsReagents']",
+                  "item/Batch Lot Numbers": "@triggerBody()?['BatchLotNumbers']",
+                  "item/Protocol ID": "@triggerBody()?['ExperimentProtocol']",
+                  "item/Protocol Version": "@triggerBody()?['{VersionNumber}']",
+                  "item/Conditions": "@triggerBody()?['ExperimentalConditions']",
+                  "item/Sample IDs": "@triggerBody()?['SampleIDs']",
+                  "item/Raw Data File Name": "@triggerBody()?['RawDataFileName']",
+                  "item/Raw Data Folder Path": "@triggerBody()?['RawDataFolderPath']",
+                  "item/Results Summary": "@triggerBody()?['ResultsSummary']",
+                  "item/Pass Fail": "@triggerBody()?['Pass_x002f_Fail/Value']",
+                  "item/Acceptance Criteria": "@triggerBody()?['AcceptanceCriteria']",
+                  "item/Deviations From Protocol": "@triggerBody()?['DeviationsFromProtocol']",
+                  "item/Corrective Actions": "@triggerBody()?['CorrectiveAction']",
+                  "item/Comments": "@triggerBody()?['Comments_x002f_Observations']",
+                  "item/Status": "@triggerBody()?['Status/Value']",
+                  "item/LinkedCAPA": "@triggerBody()?['LinkedCAPA_x002f_NCR']",
+                  "item/SharePointID": "@triggerBody()?['ID']",
+                  "item/SharePointLink": "@concat('https://contoso.sharepoint.com/sites/ExampleSite/Lists/ExperimentLog/DispForm.aspx?ID=',string(triggerBody()?['ID']))"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                  "connectionName": "shared_excelonlinebusiness",
+                  "operationId": "PatchItem"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Get_a_row": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Add_a_row_into_a_table": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "source": "sites/contoso.sharepoint.com,00000000-0000-0000-0000-000000000008,00000000-0000-0000-0000-000000000009",
+                    "drive": "YOUR_DRIVE_ID",
+                    "file": "YOUR_FILE_ID",
+                    "table": "{00000000-0000-0000-0000-000000000007}",
+                    "item/Experiment ID": "@concat(slice(triggerBody()?['WorkPackage']?['Value'],0,3),'-',triggerBody()?['ExperimentID'])",
+                    "item/Date": "@triggerBody()?['Date']",
+                    "item/Researcher": "@triggerBody()?['Researcher']",
+                    "item/Reviewed By": "@triggerBody()?['Reviewedby']",
+                    "item/Review Date": "@triggerBody()?['ReviewDate']",
+                    "item/Workstream": "@triggerBody()?['WorkPackage/Value']",
+                    "item/Design Input Ref": "@triggerBody()?['DesignInputReference']",
+                    "item/Experiment Title": "@triggerBody()?['ExperimentTitle']",
+                    "item/Purpose & Hypothesis": "@triggerBody()?['Purpose_x002f_Hypothesis']",
+                    "item/Equipment Used": "@triggerBody()?['EquipmentUsed']",
+                    "item/Cal Status": "@triggerBody()?['CalibrationStatus/Value']",
+                    "item/Materials & Reagents": "@triggerBody()?['MaterialsReagents']",
+                    "item/Batch Lot Numbers": "@triggerBody()?['BatchLotNumbers']",
+                    "item/Protocol ID": "@triggerBody()?['ExperimentProtocol']",
+                    "item/Protocol Version": "@triggerBody()?['{VersionNumber}']",
+                    "item/Conditions": "@triggerBody()?['ExperimentalConditions']",
+                    "item/Sample IDs": "@triggerBody()?['SampleIDs']",
+                    "item/Raw Data File Name": "@triggerBody()?['RawDataFileName']",
+                    "item/Raw Data Folder Path": "@triggerBody()?['RawDataFolderPath']",
+                    "item/Results Summary": "@triggerBody()?['ResultsSummary']",
+                    "item/Pass Fail": "@triggerBody()?['Pass_x002f_Fail/Value']",
+                    "item/Acceptance Criteria": "@triggerBody()?['AcceptanceCriteria']",
+                    "item/Deviations From Protocol": "@triggerBody()?['DeviationsFromProtocol']",
+                    "item/Corrective Actions": "@triggerBody()?['CorrectiveAction']",
+                    "item/Comments": "@triggerBody()?['Comments_x002f_Observations']",
+                    "item/Status": "@triggerBody()?['Status/Value']",
+                    "item/LinkedCAPA": "@triggerBody()?['LinkedCAPA_x002f_NCR']",
+                    "item/SharePointID": "@triggerBody()?['ID']",
+                    "item/SharePointLink": "@concat('https://contoso.sharepoint.com/sites/ExampleSite/Lists/ExperimentLog/DispForm.aspx?ID=',string(triggerBody()?['ID']))"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                    "connectionName": "shared_excelonlinebusiness",
+                    "operationId": "AddRowV2"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@outputs('Get_a_row')?['statusCode']",
+                  200
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        }
+      },
+      "outputs": {}
+    },
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "connectionName": "shared-sharepointonl-YOUR_CONNECTION",
+        "source": "Embedded",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+        "tier": "NotSpecified",
+        "apiName": "sharepointonline",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      },
+      "shared_excelonlinebusiness": {
+        "connectionName": "shared-excelonlinebu-YOUR_CONNECTION",
+        "source": "Embedded",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+        "tier": "NotSpecified",
+        "apiName": "excelonlinebusiness",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      }
+    },
+    "flowFailureAlertSubscribed": false,
+    "isManaged": false
+  }
+}

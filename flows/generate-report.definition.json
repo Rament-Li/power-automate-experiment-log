@@ -1,0 +1,196 @@
+{
+  "name": "00000000-0000-0000-0000-000000000012",
+  "id": "/providers/Microsoft.Flow/flows/00000000-0000-0000-0000-000000000012",
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "ExpLog - Generate Report",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "splitOn": "@triggerBody()['rows']",
+          "type": "Request",
+          "kind": "ApiConnection",
+          "inputs": {
+            "operationId": "GetItemHybridTriggerSchema",
+            "parameters": {
+              "dataset": "https://contoso.sharepoint.com/sites/ExampleSite",
+              "table": "00000000-0000-0000-0000-000000000005"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "entity": {
+                        "properties": {
+                          "ID": {
+                            "title": "ID",
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        },
+                        "type": "object",
+                        "required": []
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "rows"
+              ]
+            },
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['shared_sharepointonline']['connectionId']"
+              },
+              "api": {
+                "runtimeUrl": "https://YOUR-ENVIRONMENT.azure-apihub.net/apim/sharepointonline"
+              }
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_item": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://contoso.sharepoint.com/sites/ExampleSite",
+              "table": "00000000-0000-0000-0000-000000000005",
+              "id": "@triggerBody()?['entity']['ID']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItem"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Populate_a_Microsoft_Word_template": {
+          "runAfter": {
+            "Get_item": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "source": "sites/contoso.sharepoint.com,00000000-0000-0000-0000-000000000008,00000000-0000-0000-0000-000000000009",
+              "drive": "YOUR_DRIVE_ID",
+              "file": "YOUR_FILE_ID",
+              "dynamicFileSchema/1000": "@outputs('Get_item')?['body/ExperimentID']",
+              "dynamicFileSchema/1001": "@outputs('Get_item')?['body/Date']",
+              "dynamicFileSchema/1002": "@outputs('Get_item')?['body/Researcher']",
+              "dynamicFileSchema/1003": "@outputs('Get_item')?['body/Reviewedby']",
+              "dynamicFileSchema/1004": "@outputs('Get_item')?['body/ReviewDate']",
+              "dynamicFileSchema/1005": "@outputs('Get_item')?['body/WorkPackage/Value']",
+              "dynamicFileSchema/1006": "@outputs('Get_item')?['body/DesignInputReference']",
+              "dynamicFileSchema/1007": "@outputs('Get_item')?['body/ExperimentTitle']",
+              "dynamicFileSchema/1008": "@outputs('Get_item')?['body/Purpose_x002f_Hypothesis']",
+              "dynamicFileSchema/1009": "@outputs('Get_item')?['body/EquipmentUsed']",
+              "dynamicFileSchema/1010": "@outputs('Get_item')?['body/CalibrationStatus/Value']",
+              "dynamicFileSchema/1011": "@outputs('Get_item')?['body/MaterialsReagents']",
+              "dynamicFileSchema/1012": "@outputs('Get_item')?['body/BatchLotNumbers']",
+              "dynamicFileSchema/1013": "@outputs('Get_item')?['body/ExperimentProtocol']",
+              "dynamicFileSchema/1014": "@outputs('Get_item')?['body/ProtocolVersion']",
+              "dynamicFileSchema/1015": "@outputs('Get_item')?['body/ExperimentalConditions']",
+              "dynamicFileSchema/1016": "@outputs('Get_item')?['body/SampleIDs']",
+              "dynamicFileSchema/1017": "@outputs('Get_item')?['body/RawDataFileName']",
+              "dynamicFileSchema/1018": "@outputs('Get_item')?['body/RawDataFolderPath']",
+              "dynamicFileSchema/1019": "@outputs('Get_item')?['body/ResultsSummary']",
+              "dynamicFileSchema/1020": "@outputs('Get_item')?['body/Pass_x002f_Fail/Value']",
+              "dynamicFileSchema/1021": "@outputs('Get_item')?['body/AcceptanceCriteria']",
+              "dynamicFileSchema/1022": "@outputs('Get_item')?['body/DeviationsFromProtocol']",
+              "dynamicFileSchema/1023": "@outputs('Get_item')?['body/CorrectiveAction']",
+              "dynamicFileSchema/1024": "@outputs('Get_item')?['body/Comments_x002f_Observations']",
+              "dynamicFileSchema/1025": "@outputs('Get_item')?['body/Status/Value']",
+              "dynamicFileSchema/1026": "@outputs('Get_item')?['body/LinkedCAPA_x002f_NCR']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_wordonlinebusiness",
+              "connectionName": "shared_wordonlinebusiness",
+              "operationId": "CreateFileItem"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Create_file": {
+          "runAfter": {
+            "Populate_a_Microsoft_Word_template": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://contoso.sharepoint.com/sites/ExampleSite",
+              "folderPath": "/Shared Documents/Example Reports",
+              "name": "@concat(slice(body('Get_item')?['WorkPackage']?['Value'],0,3),'-',body('Get_item')?['ExperimentID'],'.docx')",
+              "body": "@body('Populate_a_Microsoft_Word_template')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateFile"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "connectionName": "shared-sharepointonl-YOUR_CONNECTION",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+        "tier": "NotSpecified",
+        "apiName": "sharepointonline",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      },
+      "shared_wordonlinebusiness": {
+        "connectionName": "shared-wordonlinebus-YOUR_CONNECTION",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_wordonlinebusiness",
+        "tier": "NotSpecified",
+        "apiName": "wordonlinebusiness",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      }
+    },
+    "flowFailureAlertSubscribed": false,
+    "isManaged": false
+  }
+}
